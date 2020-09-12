@@ -6,29 +6,18 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.template.defaultfilters import truncatechars, truncatewords
 
-from website.enums import ROLE_CHOICES, STATUSES, STATUSES_FOR_REQUESTS, RATING_VALUES
+from website.enums import Status, STATUSES_FOR_REQUESTS, RATING_VALUES
 
 
 class CustomUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="custom_user")
     description = models.TextField(verbose_name="О себе")
-    email = models.CharField(max_length=50, verbose_name="Почта")
-    role = models.IntegerField(choices=ROLE_CHOICES, blank=False, null=False, default=ROLE_CHOICES[0][0],
-                               verbose_name="Роль")
-    date_registration = models.DateTimeField(auto_now_add=True, blank=False, verbose_name="Дата регистрации")
-    status = models.IntegerField(choices=STATUSES, blank=False, null=False, default=STATUSES[2][0],
+    status = models.IntegerField(choices=Status.choices(), blank=False, null=False, default=Status.not_activated.value,
                                  verbose_name="Статус")
-
     photo = models.ImageField(upload_to='profile_pics', default='profile_pics/default.jpg')
 
     def __str__(self):
         return self.user.username
-
-    def is_moderator(self):
-        return self.role == ROLE_CHOICES[1][0]
-
-    def is_admin(self):
-        return self.role == ROLE_CHOICES[2][0]
 
 
 @receiver(post_save, sender=User)
