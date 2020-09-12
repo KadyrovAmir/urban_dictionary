@@ -10,8 +10,15 @@
         {% for rfp in rfps %}
             <a href="{% url "website:request_for_definition" rfp.id %}" style="text-decoration: none">
                 <div class="jumbotron">
-                    {{ forloop.counter }})
-                    &nbsp {{ rfp.definition }}
+                    <div class="row">
+                        <div class="col-md-9">
+                            {{ forloop.counter }})
+                            &nbsp {{ rfp.definition }}
+                        </div>
+                        <div class="col-md-3" style="text-align: right; font-size: 18px">
+                            <p><i>{{ rfp.date_creation }}</i></p>
+                        </div>
+                    </div>
                 </div>
             </a>
         {% endfor %}

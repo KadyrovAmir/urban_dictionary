@@ -7,8 +7,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
             crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
             integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
@@ -41,7 +41,7 @@
                         <a class="nav-link" href="/">Определения</a>
                     </li>
                     <li class="nav-item horizontal">
-                        <a class="nav-link" href="#">Поддержка</a>
+                        <a class="nav-link" href="{% url "website:support" %}">Поддержка</a>
                     </li>
                     <li class="nav-item horizontal">
                         <a class="nav-link" href="{% url 'login' %}">Войти</a>
@@ -50,23 +50,31 @@
                     <li class="nav-item horizontal first">
                         <a class="nav-link" href="/">Определения</a>
                     </li>
+                    <li class="nav-item horizontal">
+                        <a class="nav-link" href="{% url "website:favourites_list" %}">Избранное</a>
+                    </li>
                     {% if not user.custom_user.is_admin %}
                         <li class="nav-item horizontal">
                             <a class="nav-link" href="{% url "website:personal_definitions" %}">Мои определения</a>
                         </li>
-                        <li class="nav-item horizontal">
-                            <a class="nav-link" href="{% url "website:favourites_list" %}">Избранное</a>
-                        </li>
-                        <li class="nav-item horizontal">
-                            <a class="nav-link" href="#">Поддержка</a>
-                        </li>
                     {% endif %}
                     <li class="nav-item horizontal">
-                        <a class="nav-link" href="#">Уведомления</a>
+                        <a class="nav-link" href="{% url "website:support" %}">Поддержка</a>
+                    </li>
+                    <li class="nav-item horizontal">
+                        <a class="nav-link" href="{% url "website:notifications" %}">Уведомления
+                            {% if user.custom_user.get_new_notification != 0 %}
+                                ({{ user.custom_user.get_new_notification }})
+                            {% endif %}</a>
                     </li>
                     {% if user.custom_user.is_admin %}
                         <li class="nav-item horizontal">
-                            <a class="nav-link" href="{% url "website:requests_pub" %}">Запросы на публикацию</a>
+                            <a class="nav-link" href="{% url "website:requests_pub" %}">Запросы на
+                                публикацию</a>
+                        </li>
+                        <li class="nav-item horizontal">
+                            <a class="nav-link" href="{% url "website:requests_for_update_status" %}">Запросы на
+                                обновление статуса</a>
                         </li>
                     {% endif %}
                     <li class="nav-item horizontal">

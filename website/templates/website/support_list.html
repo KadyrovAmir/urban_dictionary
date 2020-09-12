@@ -1,0 +1,32 @@
+{% extends 'website/base/base_page.html' %}
+{% block title %}
+    Вопросы к администрации
+{% endblock %}
+{% block content %}
+    <br><br>
+    <h3>Вопросы к администрации</h3>
+    <hr>
+    {% if questions %}
+        {% for question in questions %}
+            <a href="{% url 'website:answer_support' question.id %}" style="text-decoration: none">
+                <div class="jumbotron">
+                    <div class="row">
+                        <div class="col-md-6 truncate">
+                            {{ forloop.counter }})
+                            &nbsp {{ question.question }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ question.name }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ question.date_creation }}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    {% else %}
+        <p>На данный момент вопросов от пользователей нет</p>
+    {% endif %}
+    <br><br>
+{% endblock %}

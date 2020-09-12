@@ -44,23 +44,33 @@
             <br>
             <h5 class="header_for_files">Прикрепить файлы к статье</h5>
             {% for file in definition.files.all %}
-                <div class="row file">
+                <div id="file{{ file.pk }}" class="row file">
                     <div class="form-group col-md-4">
-                        <label>Файл {{ forloop.counter }} </label>
+                        <label>Файл </label>
                         <img src="{{ file.image.url }}" style="max-width:70%; max-height:70%;">
                         <br>
-                        <br>
-                        <input class="form-control-file" type="file" name="upload_data" value="{{ file.image.url}}">
-                    </div>
-                    <div class="form-group col-md-5">
-                        <label> Подпись к фотографии
-                            <input name="header" class="form-control" type="text" value="{{ file.header_for_file }}">
-                        </label>
                     </div>
                     <div class="form-group col-md-3" style="margin-top: 30px">
-                        <p class="btn btn-danger del_file">Удалить файл</p>
+                        <p class="btn btn-danger" id="drop_file{{ file.pk }}" name="{{ file.pk }}">Удалить &nbsp<i
+                                class="fa fa-close"></i></p>
                     </div>
                 </div>
+                <script>
+                    $('#drop_file{{ file.pk }}').click(function () {
+                        $.ajax({
+                            type: "POST",
+                            url: "{% url 'website:drop_file' %}",
+                            data: {'file_id': $(this).attr('name'), 'csrfmiddlewaretoken': '{{ csrf_token }}'},
+                            dataType: "json",
+                            success: function (response) {
+                                $('#file{{ file.pk }}').remove();
+                            },
+                            error: function (rs, e) {
+                                alert(rs.responseText);
+                            }
+                        });
+                    })
+                </script>
             {% endfor %}
 
             <a id="add_file" class="btn btn-outline-secondary">Добавить файл</a>
@@ -97,7 +107,7 @@
                 }
                 $(className).after("<div class=\"row file\">\n" +
                     "            <div class=\"form-group col-md-4\">\n" +
-                    "                <label>Файл " + count + "</label><input class=\"form-control-file\" type=\"file\" name=\"upload_data\">\n" +
+                    "                <label>Файл</label><input class=\"form-control-file\" type=\"file\" name=\"upload_data\">\n" +
                     "            </div>\n" +
                     "            <div class=\"form-group col-md-5\">\n" +
                     "                <label> Подпись к фотографии\n" +
@@ -129,5 +139,7 @@
                 }
             });
         });
+
     </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
 {% endblock %}

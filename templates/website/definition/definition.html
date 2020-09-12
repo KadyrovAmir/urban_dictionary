@@ -27,7 +27,12 @@
                 {% endif %}
             </div>
             <div class="col-md-6">
-                <h5>Автор статьи - <a href={% url 'website:profile' definition.author.id %}>{{ definition.author }}</a>
+
+                <h5>Автор статьи - {% if definition.author.is_block %}
+                    {{ definition.author }}
+                {% else %}
+                    <a href={% url 'website:profile' definition.author.id %}>{{ definition.author }}</a>
+                {% endif %}
                 </h5>
                 {% if definition.author.user.last_name != "" or definition.author.user.last_name != "" %}
                     <h6 style="color: #4b4b4b">{{ definition.author.user.last_name }} {{ definition.author.user.first_name }}</h6>
@@ -88,9 +93,13 @@
         {% endif %}
         <hr>
         {% if definition.is_publish %}
-            <button id="like{{ definition.pk }}" name="{{ definition.pk }}" class="btn btn-success"><i
+            <button {% if not user.is_authenticated %} disabled {% endif %} id="like{{ definition.pk }}"
+                                                       name="{{ definition.pk }}" class="btn
+                                                       {% is_liked definition user %} "><i
                     class="fa fa-thumbs-up">&nbsp{{ definition.get_likes }}</i></button>
-            <button id="dislike{{ definition.pk }}" name="{{ definition.pk }}" class="btn btn-danger"><i
+            <button {% if not user.is_authenticated %} disabled {% endif %} id="dislike{{ definition.pk }}"
+                                                       name="{{ definition.pk }}" class="btn
+                                                       {% is_disliked definition user %} "><i
                     class="fa fa-thumbs-down">&nbsp{{ definition.get_dislikes }}</i></button>
             <br>
             <br>
@@ -104,6 +113,15 @@
                         success: function (response) {
                             $('#like{{ definition.pk }}').html("<i class=\"fa fa-thumbs-up\">&nbsp" + response.likes_count + "</i>");
                             $('#dislike{{ definition.pk }}').html("<i class=\"fa fa-thumbs-down\">&nbsp" + response.dislikes_count + "</i>");
+                            $("#like{{ definition.pk }}").removeClass();
+                            $("#dislike{{ definition.pk }}").removeClass();
+                            if (response.is_liked) {
+                                $("#like{{ definition.pk }}").addClass("btn btn-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-outline-danger");
+                            } else {
+                                $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-outline-danger");
+                            }
                         },
                         error: function (rs, e) {
                             alert(rs.responseText);
@@ -121,6 +139,15 @@
                         success: function (response) {
                             $('#like{{ definition.pk }}').html("<i class=\"fa fa-thumbs-up\">&nbsp" + response.likes_count + "</i>");
                             $('#dislike{{ definition.pk }}').html("<i class=\"fa fa-thumbs-down\">&nbsp" + response.dislikes_count + "</i>");
+                            $("#like{{ definition.pk }}").removeClass();
+                            $("#dislike{{ definition.pk }}").removeClass();
+                            if (response.is_disliked) {
+                                $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-danger");
+                            } else {
+                                $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-outline-danger");
+                            }
                         },
                         error: function (rs, e) {
                             alert(rs.responseText);

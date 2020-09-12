@@ -15,9 +15,9 @@
                         </div>
                     </div>
                     <div class="col d-flex flex-column flex-sm-row justify-content-between mb-3">
-                        <div class="text-center text-sm-left mb-2 mb-sm-0">
+                        <div class="text-sm-left mb-2 mb-sm-0">
                             <h4 class="pt-sm-2 pb-1 mb-0 text-nowrap">{{ profile.first_name }} {{ profile.last_name }}</h4>
-                            <p class="mb-0">{{ profile.custom_user.user.username }} {{ profile_form.photo.path }}</p>
+                            <p class="mb-0">{{ profile.custom_user.user.email }}</p>
                         </div>
                         <div class="text-center text-sm-right">
                             <span class="badge badge-secondary">{{ role }}</span>
@@ -32,9 +32,22 @@
                                 <div class="col d-flex justify-content-end" style="margin: 10px">
                                     <a class="btn btn-primary" href="{% url 'logout' %}">Выйти</a>
                                 </div>
+                            {% else %}
+                                <div class="col d-flex justify-content-end" style="margin-top: 30px">
+                                    <a class="btn btn-primary" href="{% url 'website:user_definitions' profile.id %}">Определения
+                                        пользователя ({{ definition_number }})</a>
+                                </div>
                             {% endif %}
                         </div>
                     </div>
+                </div>
+                <div class="col-4 text-sm-left" style="padding: 0">
+                    <p class="text-center mb-0 user-rating">Рейтинг пользователя: {{ rating }}</p>
+                    {% if user.id == profile.id and not user.custom_user.update_status and user.custom_user.is_ready_to_update %}
+                        <a class="btn btn-warning" style="margin-top: 10px; width: 352.6px"
+                           href="{% url 'website:create_request_for_update_status' %}">Повысить уровень
+                            профиля &nbsp <i class="fa fa-eject"></i></a>
+                    {% endif %}
                 </div>
                 <div class="tab-content pt-3">
                     <div class="tab-pane active">
@@ -46,7 +59,47 @@
                         </div>
                     </div>
                 </div>
+                {% if user.id != profile.id and user.custom_user.is_admin %}
+                    {% if profile.custom_user.is_block %}
+                        <form action="{% url "website:unblock" profile.id %}" method="post">
+                            {% csrf_token %}
+                            <input type="submit" class="btn btn-primary" value="Разблокировать">
+                        </form>
+                    {% else %}
+                        <input type="button" class="btn btn-danger" id="block_button" value="Заблокировать">
+                        <form action="{% url "website:block" profile.id %}" method="post">
+                            {% csrf_token %}
+                            <div style="display: none" id="content_block">
+                                <hr>
+                                <h5>Заблокировать пользователя {{ profile }}</h5>
+                                <hr>
+                                <div class="row" style="margin-top: 20px">
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <label><strong>Причина блокировки</strong></label>
+                                            <textarea class="form-control" cols="5" name="reason" required></textarea>
+                                            <label><strong>Дата разблокировки</strong></label>
+                                            <input type="datetime-local" name="date" class="form-control" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+                                <input type="submit" class="btn btn-danger" value="Блокировать">
+                            </div>
+                        </form>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
+{% endblock %}
+{% block script %}
+    <script>
+        $(document).ready(function () {
+            $("#block_button").click(function () {
+                $("#content_block").show();
+                $("#block_button").hide();
+            });
+        });
+    </script>
 {% endblock %}

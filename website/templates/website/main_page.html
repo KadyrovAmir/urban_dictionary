@@ -26,8 +26,11 @@
                     <a href={% url 'website:term' definition.term.id %}><h3>{{ definition.term.name }}</h3></a>
                 </div>
                 <div class="col-md-6">
-                    <h5>Автор статьи - <a
-                            href={% url 'website:profile' definition.author.id %}>{{ definition.author }}</a>
+                    <h5>Автор статьи - {% if definition.author.is_block %}
+                        {{ definition.author }}
+                    {% else %}
+                        <a href={% url 'website:profile' definition.author.id %}>{{ definition.author }}</a>
+                    {% endif %}
                     </h5>
                     {% if definition.author.user.last_name != "" or definition.author.user.last_name != "" %}
                         <h6 style="color: #4b4b4b">{{ definition.author.user.last_name }} {{ definition.author.user.first_name }}</h6>
@@ -41,6 +44,10 @@
                         <p class="{% is_favoured definition user %}" id="favorite{{ definition.pk }}"
                            name="{{ definition.pk }}" data-toggle="tooltip" data-placement="bottom"
                            title="Добавить в избранное"><i class=" fa fa-heart"></i></p>
+
+                        <p class="btn btn-danger" id="cancel{{ definition.pk }}"
+                           name="{{ definition.pk }}" data-placement="bottom"
+                           style="display: none; position: absolute; right: 17px">Отменить</p>
                     </div>
                 {% endif %}
                 <script>
@@ -51,11 +58,16 @@
                             data: {'def_id': $(this).attr('name'), 'csrfmiddlewaretoken': '{{ csrf_token }}'},
                             dataType: "json",
                             success: function (response) {
-                                if (response.colour === 'black') {
-                                    $('#favorite{{ definition.pk }}').removeClass("favoritesadded").addClass("favorites");
-                                } else {
-                                    $('#favorite{{ definition.pk }}').removeClass("favorites").addClass("favoritesadded");
-                                }
+                                {% if favorites_page %}
+                                    $('#favorite{{ definition.pk }}').hide();
+                                    $('#cancel{{ definition.pk }}').show();
+                                {%  else %}
+                                    if (response.colour === 'black') {
+                                        $('#favorite{{ definition.pk }}').removeClass("favoritesadded").addClass("favorites");
+                                    } else {
+                                        $('#favorite{{ definition.pk }}').removeClass("favorites").addClass("favoritesadded");
+                                    }
+                                {% endif %}
                             },
                             fail: function (response) {
                                 alert(response.responseText)
@@ -67,6 +79,29 @@
                         });
                     })
                 </script>
+                {% if favorites_page %}
+                    <script>
+                        $('#cancel{{ definition.pk }}').click(function () {
+                            $.ajax({
+                                type: "POST",
+                                url: "{% url 'website:favourite' %}",
+                                data: {'def_id': $(this).attr('name'), 'csrfmiddlewaretoken': '{{ csrf_token }}'},
+                                dataType: "json",
+                                success: function (response) {
+                                    $('#favorite{{ definition.pk }}').show();
+                                    $('#cancel{{ definition.pk }}').hide();
+                                },
+                                fail: function (response) {
+                                    alert(response.responseText)
+                                },
+                                error: function (rs, e) {
+                                    debugger
+                                    alert(rs.responseText);
+                                }
+                            });
+                        })
+                    </script>
+                {% endif %}
             </div>
             <h3>Описание</h3>
             <a href="{% url "website:definition" definition.id %}" style="text-decoration: none">
@@ -79,9 +114,13 @@
                 <p>{{ definition.get_primary_example }}</p>
             </div>
             <hr>
-            <button id="like{{ definition.pk }}" name="{{ definition.pk }}" class="btn btn-success"><i
+            <button {% if not user.is_authenticated %} disabled {% endif %} id="like{{ definition.pk }}"
+                                                       name="{{ definition.pk }}"
+                                                       class="btn {% is_liked definition user %}"><i
                     class="fa fa-thumbs-up">&nbsp{{ definition.get_likes }}</i></button>
-            <button id="dislike{{ definition.pk }}" name="{{ definition.pk }}" class="btn btn-danger"><i
+            <button {% if not user.is_authenticated %} disabled {% endif %} id="dislike{{ definition.pk }}"
+                                                       name="{{ definition.pk }}"
+                                                       class="btn {% is_disliked definition user %}"><i
                     class="fa fa-thumbs-down">&nbsp{{ definition.get_dislikes }}</i></button>
             <br>
             <br>
@@ -95,6 +134,15 @@
                         success: function (response) {
                             $('#like{{ definition.pk }}').html("<i class=\"fa fa-thumbs-up\">&nbsp" + response.likes_count + "</i>");
                             $('#dislike{{ definition.pk }}').html("<i class=\"fa fa-thumbs-down\">&nbsp" + response.dislikes_count + "</i>");
+                            $("#like{{ definition.pk }}").removeClass();
+                            $("#dislike{{ definition.pk }}").removeClass();
+                            if (response.is_liked) {
+                                $("#like{{ definition.pk }}").addClass("btn btn-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-outline-danger");
+                            } else {
+                                $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-outline-danger");
+                            }
                         },
                         error: function (rs, e) {
                             alert(rs.responseText);
@@ -112,6 +160,15 @@
                         success: function (response) {
                             $('#like{{ definition.pk }}').html("<i class=\"fa fa-thumbs-up\">&nbsp" + response.likes_count + "</i>");
                             $('#dislike{{ definition.pk }}').html("<i class=\"fa fa-thumbs-down\">&nbsp" + response.dislikes_count + "</i>");
+                            $("#like{{ definition.pk }}").removeClass();
+                            $("#dislike{{ definition.pk }}").removeClass();
+                            if (response.is_disliked) {
+                                $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-danger");
+                            } else {
+                                $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
+                                $("#dislike{{ definition.pk }}").addClass("btn btn-outline-danger");
+                            }
                         },
                         error: function (rs, e) {
                             alert(rs.responseText);

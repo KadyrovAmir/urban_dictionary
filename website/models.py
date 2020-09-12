@@ -5,8 +5,9 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.template.defaultfilters import truncatechars, truncatewords
+from django.utils import timezone
 
-from website.enums import Status, STATUSES_FOR_REQUESTS, RATING_VALUES
+from website.enums import *
 
 
 class CustomUser(models.Model):
@@ -16,8 +17,42 @@ class CustomUser(models.Model):
                                  verbose_name="Статус")
     photo = models.ImageField(upload_to='profile_pics', default='profile_pics/default.jpg')
 
+    def get_rating(self):
+        return sum(map(lambda x: x.get_likes() - x.get_dislikes(), self.definitions.all()))
+
     def __str__(self):
         return self.user.username
+
+    def is_moderator(self):
+        return self.role == ROLE_CHOICES[1][0]
+
+    def is_admin(self):
+        return self.role == ROLE_CHOICES[2][0]
+
+    def get_new_notification(self):
+        return len(self.notifications.filter(new=True))
+
+    def get_ratio_lik_to_dis(self):
+        likes = sum(map(lambda x: x.get_likes(), self.definitions.all()))
+        dislikes = sum(map(lambda x: x.get_dislikes(), self.definitions.all()))
+        return likes * 100 / (likes + dislikes)
+
+    def is_ready_to_update(self):
+        return len(self.definitions.all().exclude(
+            date__isnull=True)) > DEF_AMOUNT and self.get_rating() >= ALL_ESTIMATES and self.get_ratio_lik_to_dis() >= PERCENTAGE_OF_LIKES
+
+    def is_block(self):
+        block = self.blocking.all().filter(active=True)
+        if len(block) == 0:
+            return False
+        block = block[0]
+        if block.expiration_date <= timezone.now():
+            block.active = False
+            block.save()
+            block.user.is_active = True
+            block.user.save()
+            return False
+        return True
 
 
 @receiver(post_save, sender=User)
@@ -130,7 +165,7 @@ class RequestForPublication(models.Model):
     old_request = models.ForeignKey("self", blank=True, null=True, verbose_name="Старый запрос на публикацию",
                                     on_delete=models.SET_NULL)
 
-    date_creation = models.DateTimeField(blank=False, verbose_name="Дата создания запроса")
+    date_creation = models.DateTimeField(blank=False, null=False, verbose_name="Дата создания запроса")
 
     def __str__(self):
         return "Запрос на публикацию определения %s" % self.definition
@@ -170,11 +205,12 @@ class Rating(models.Model):
 
 
 class Blocking(models.Model):
-    user = models.OneToOneField(CustomUser, related_name='blocking', on_delete=models.CASCADE,
-                                blank=False, null=False, verbose_name='Пользователь')
+    user = models.ForeignKey(CustomUser, related_name='blocking', on_delete=models.CASCADE,
+                             blank=False, null=False, verbose_name='Пользователь')
     reason = models.TextField(verbose_name="Причина блокировки", blank=False)
     date_creation = models.DateTimeField(auto_now_add=True, blank=False, verbose_name="Дата создания блокировки")
     expiration_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата истекания блокировки")
+    active = models.BooleanField(blank=False, null=False, default=True, verbose_name="Активная ")
 
     def __str__(self):
         return "Блокировка пользователя %s" % self.user
@@ -191,11 +227,65 @@ class Favorites(models.Model):
 
 
 class Notification(models.Model):
-    info = models.TextField(verbose_name="Текст уведомления", blank=False)
-    date_creation = models.DateTimeField(auto_now_add=True, blank=False, verbose_name="Дата уведомления")
-    action_id = models.CharField(max_length=30, verbose_name="ID события")
+    date_creation = models.DateTimeField(blank=False, null=False, verbose_name="Дата уведомления")
+    action_type = models.IntegerField(choices=ACTION_TYPES, blank=False, null=False,
+                                      default=ACTION_TYPES[0][0],
+                                      verbose_name="Тип события")
     user = models.ForeignKey(CustomUser, related_name='notifications', on_delete=models.CASCADE,
                              blank=False, null=False, verbose_name='Ссылка на пользователя')
+    models_id = models.CharField(max_length=50, verbose_name="Почта", default="", blank=True, null=True)
+    new = models.BooleanField(blank=False, null=False, default=True, verbose_name="Новое уведомление")
 
     def __str__(self):
-        return "Уведомление %s пользователя %s" % (self.info, self.user)
+        return "Уведомление %s пользователя %s" % (self.action_type, self.user)
+
+    def get_def(self):
+        return Definition.objects.get(pk=self.get_id(DEF))
+
+    def get_support(self):
+        return Support.objects.get(pk=self.get_id(SUP))
+
+    def get_user(self):
+        return CustomUser.objects.get(pk=self.get_id(USER))
+
+    def get_rfp(self):
+        return RequestForPublication.objects.get(pk=self.get_id(RFP))
+
+    def get_rups(self):
+        return RequestUpdateStatus.objects.get(pk=self.get_id(RUPS))
+
+    # TODO change return object
+    def get_request_support(self):
+        return self.get_id(SUPPORT)
+
+    def get_id(self, pref):
+        elems = str(self.models_id).split(" ")
+        for e in elems:
+            if pref in e:
+                return e[len(pref):]
+        return None
+
+
+class RequestUpdateStatus(models.Model):
+    status = models.IntegerField(choices=STATUSES_FOR_REQUESTS, blank=False, null=False,
+                                 default=STATUSES_FOR_REQUESTS[0][0],
+                                 verbose_name="Статус обновления уровня профиля")
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="update_status")
+    date_creation = models.DateTimeField(blank=False, null=False, verbose_name="Дата создания запроса")
+
+    def __str__(self):
+        return "Запрос на обновление статуса до модератора для пользователя %s" % self.user
+
+
+class Support(models.Model):
+    question = models.TextField(verbose_name="Ваш вопрос", blank=False)
+    name = models.TextField(verbose_name="Ваше имя", blank=False, default="Аноним")
+    email = models.CharField(max_length=50, verbose_name="Почта")
+    date_creation = models.DateTimeField(blank=False, null=False, verbose_name="Дата")
+    answer = models.TextField(verbose_name="Ответ", blank=False, null=True)
+    user = models.ForeignKey(CustomUser, related_name='support', on_delete=models.CASCADE,
+                             blank=True, null=True, default=None,
+                             verbose_name='Ссылка на пользователя')
+
+    def __str__(self):
+        return "Вопрос %s от пользователя %s" % (self.question, self.email)

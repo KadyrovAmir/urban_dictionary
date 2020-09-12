@@ -1,0 +1,164 @@
+{% extends 'website/base/base_page.html' %}
+{% load static %}
+{% block title %} Уведомления
+{% endblock %}
+{% block content %}
+    <br>
+    <h3>Уведомления</h3>
+    <hr>
+    {% for notif in notifications %}
+        <div class="jumbotron">
+            <div class="row">
+                <div class="col-md-9">
+                    {% if notif.action_type == 0 %}
+                        <p>Пользователь {% if notif.get_user.is_block %}{{ notif.get_user }}
+                        {% else %}<a
+                                    href="{% url "website:profile" notif.get_user.id %}"> {{ notif.get_user }}</a>
+                        {% endif %}
+                            поставил Вам дизлайк на определение <a
+                                    href="{% url "website:definition" notif.get_def.id %}">
+                                {{ notif.get_def.term.name }}</a>
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 1 %}
+                        <p>Пользователь {% if notif.get_user.is_block %}{{ notif.get_user }}
+                        {% else %} <a
+                                    href="{% url "website:profile" notif.get_user.id %}"> {{ notif.get_user }}</a>
+                        {% endif %}
+                            поставил Вам лайк на определение <a href="{% url "website:definition" notif.get_def.id %}">
+                                {{ notif.get_def.term.name }}</a>
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 2 %}
+                        <p>Ваш рейтинг составляет сейчас <strong>{{ user.custom_user.get_rating }}</strong>.
+                            Вы можете повысить свой статус до модератора определений
+                            <a class="btn btn-warning" style="margin-top: 10px"
+                               href="{% url 'website:create_request_for_update_status' %}">Повысить уровень
+                                профиля</a></p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 3 %}
+                        <p>{% if notif.get_rups.status == 3 %}
+                            Администратор обновил ваш статус до модератора,
+                            поздравляем! Теперь вы можете публиковать
+                            определения без подтверждерния администратором
+                        {% else %}
+                            Администратор отклонил ваш заявку обновления статуса до модератора, извините!
+                        {% endif %}
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 4 %}
+                        <p>Администратор отправил ваше определение на доработку <a
+                                href="{% url "website:definition" notif.get_def.id %}">{{ notif.get_def.term.name }}</a>
+                            {% if notif.get_def.get_cur_status == 2 %}
+                                <a
+                                        href="{% url "website:edit_definition" notif.get_def.id %}"
+                                        class="btn btn-light" style="background: #f9870b; color: white">Исправить</a>
+                            {% endif %}
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 5 %}
+                        <p>Администратор отклонил ваше определение <a
+                                href="{% url "website:definition" notif.get_def.id %}">{{ notif.get_def.term.name }}</a>
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 6 %}
+                        <p>Ваше определение было опубликовано <a
+                                href="{% url "website:definition" notif.get_def.id %}">{{ notif.get_def.term.name }}</a>
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 7 %}
+                        <p>Вы были заблокированы администратором по причине <strong>причина</strong> до <strong>такого
+                            числа</strong></p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 8 %}
+                        <p>Вы были разблокированы администратором</p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 9 %}
+                        <p>Ваша блокировка истекла <strong>такого числа</strong>, вы снова можете постить определения!
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 10 %}
+                        <p>Пользователь
+                            {% if notif.get_user.is_block %}
+                                {{ notif.get_user }}
+                            {% else %}
+                                <a href="{% url "website:profile" notif.get_user.id %}">{{ notif.get_user }}</a>
+                            {% endif %}
+                            добавил в <i style="color: red">избранное</i> вашу статью <a
+                                    href="{% url "website:definition" notif.get_def.id %}">{{ notif.get_def.term.name }}</a>
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 11 %}
+                        <p>Поддержка ответила вам на почту <strong>{{ notif.get_support.email }}</strong> по вашему
+                            вопросу
+                            <strong>"{{ notif.get_support.question }}"</strong>
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 12 %}
+                        <p>Пользователь {% if notif.get_user.is_block %}
+                            {{ notif.get_user }}
+                        {% else %}
+                            <a href="{% url "website:profile" notif.get_user.id %}">{{ notif.get_user }}</a>
+                        {% endif %}
+                            отправил определение  <a
+                                    {% if notif.get_rfp.status == 1 %}
+                                    href="{% url "website:request_for_definition" notif.get_rfp.id %}"
+                                    {% else %}
+                                     href="{% url "website:definition" notif.get_rfp.definition.id %}"
+                                        {% endif %}>
+                                {{ notif.get_rfp.definition.term.name }}</a> на публкацию</p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 13 %}
+                        <p>Пользователь {% if notif.get_rups.user.is_block %}
+                            {{ notif.get_rups.user}}
+                        {% else %}
+                            <a href="{% url "website:profile" notif.get_rups.user.id %}">{{ notif.get_rups.user }}</a>
+                        {% endif %}
+                            отправил запрос на повышение статуса до модератора определений
+                        </p>
+
+                        {# ==============================================================================================  #}
+
+                    {% elif  notif.action_type == 14 %}
+                        <p>{{ notif.get_support.name }} отправил <a
+                                href="{% url 'website:answer_support' notif.get_support.id %}">вопрос</a>
+                            в поддержку
+                        </p>
+                    {% endif %}
+
+                </div>
+                <div class="col-md-3" style="text-align: right; font-size: 18px">
+                    <p><i>{{ notif.date_creation }}</i></p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <br>
+    <br>
+{% endblock %}

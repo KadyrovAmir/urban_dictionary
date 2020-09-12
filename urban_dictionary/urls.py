@@ -20,11 +20,11 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 
 from urban_dictionary import settings
-from website.views import custom_handler404
 
 urlpatterns = [
     path(r'admin/', admin.site.urls),
     path(r'urban/', include('website.urls', namespace="website")),
+    path(r'api/', include('api.urls', namespace="api")),
     path(r'accounts/', include('django_registration.backends.activation.urls')),
     path(r'accounts/', include('django.contrib.auth.urls')),
     path(r'', RedirectView.as_view(url='/urban/', permanent=True)),
@@ -33,4 +33,5 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-handler404 = custom_handler404
+handler404 = 'website.views.custom_handler404'
+handler500 = 'website.views.custom_handler500'

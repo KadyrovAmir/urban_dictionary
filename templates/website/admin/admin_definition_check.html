@@ -3,6 +3,9 @@
     Проверка определения {{ rfp.definition.term.name }}
 {% endblock %}
 {% block content %}
+    <br>
+    <h3>Проверка определения {{ rfp.definition.term.name }} </h3>
+    <hr>
     <div style="margin: 30px">
         <br>
         <div class="row">
@@ -17,7 +20,7 @@
         </div>
         <p>{{ rfp.definition.description }}</p>
         <h4>Примеры</h4>
-         {% for example in rfp.definition.examples.all %}
+        {% for example in rfp.definition.examples.all %}
             <div class="jumbotron" {% if example.primary %} style="background: #fabd94" {% endif %}>
                 <p>{{ forloop.counter }}) &nbsp {{ example.example }}</p>
             </div>
@@ -31,31 +34,35 @@
         <br>
     </div>
     <hr>
-    <form method="post" action="{% url 'website:request_for_definition' rfp.id %}">
-        {% csrf_token %}
-        <div class="form-check">
-            <label for="approve" class="form-check-label">
-                <input type="radio" id="approve" class="form-check-input" name="answer"
-                       value="approve">Подтвердить</label>
-        </div>
+    <h4>Выберите действие</h4>
+    <hr>
+    <div style="margin-left: 50px">
+        <form method="post" action="{% url 'website:request_for_definition' rfp.id %}">
+            {% csrf_token %}
+            <div class="form-check">
+                <label for="approve" class="form-check-label">
+                    <input type="radio" id="approve" class="form-check-input" name="answer"
+                           value="approve">Подтвердить</label>
+            </div>
 
-        <div class="form-check">
-            <label for="reject" class="form-check-label">
-                <input type="radio" id="reject" class="form-check-input" name="answer" value="reject">
-                Отклонить</label>
-        </div>
-        <div class="form-check">
-            <label for="reject_permanent" class="form-check-label">
-                <input type="radio" id="reject_permanent" class="form-check-input" name="answer"
-                       value="reject_permanent">
-                Отклонить навсегда</label>
-        </div>
-        <div class="comment_reason" style="display: none">
-            <strong>Причина отклонения</strong><textarea name="reason" class="form-control"></textarea><br>
-        </div>
-        <br>
-        <input style="font-size: 26px" class="btn btn-success" type="submit" value="Отправить"/>
-    </form>
+            <div class="form-check">
+                <label for="reject" class="form-check-label">
+                    <input type="radio" id="reject" class="form-check-input" name="answer" value="reject">
+                    Отклонить</label>
+            </div>
+            <div class="form-check">
+                <label for="reject_permanent" class="form-check-label">
+                    <input type="radio" id="reject_permanent" class="form-check-input" name="answer"
+                           value="reject_permanent">
+                    Отклонить навсегда</label>
+            </div>
+            <div class="comment_reason" style="display: none">
+                <strong>Причина отклонения</strong><textarea name="reason" class="form-control"></textarea><br>
+            </div>
+            <br>
+            <input style="font-size: 26px" class="btn btn-success" type="submit" value="Отправить"/>
+        </form>
+    </div>
     <br>
 
 {% endblock %}

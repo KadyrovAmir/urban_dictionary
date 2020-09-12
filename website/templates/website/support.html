@@ -1,0 +1,43 @@
+{% extends 'website/base/base_page.html' %}
+{% block title %}
+    Поддержка
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="e-profile">
+                <br>
+                <h3>Задайте вопрос</h3>
+                <hr>
+                <form method="post" action="{% url "website:support" %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="id_name">Ваше имя</label>
+                                <input class="form-control" type="text"
+                                       name="name"
+                                       id="id_name"
+                                       {% if user.is_authenticated %}value="{{ user.first_name }}"{% endif %} required>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_email">Ваша почта</label>
+                                <input class="form-control" type="text"
+                                       name="email"
+                                       id="id_email"
+                                       {% if user.is_authenticated %}value="{{ user.email }}"{% endif %} required>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_question">Вопрос</label>
+                                <textarea class="form-control" cols="5"
+                                          name="question"
+                                          id="id_question" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Отправить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

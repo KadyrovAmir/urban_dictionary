@@ -1,0 +1,37 @@
+{% extends 'website/base/base_page.html' %}
+{% block title %}
+    Запросы на обновление статуса
+{% endblock %}
+{% block content %}
+    <br><br>
+    <h3> Запросы на обновление статуса</h3>
+    <hr>
+    {% if rups %}
+        {% for rup in rups %}
+            <div class="jumbotron">
+                <div class="row">
+                    <div class="col-md-9">
+                        <p>Заявка на обновление статуса пользователя
+                            {% if rup.user.is_block %}
+                                {{ rup.user }}
+                            {% else %}
+                                <a
+                                        href="{% url "website:profile" rup.user.id %}"> {{ rup.user }}</a> с
+                                рейтингом {{ rup.user.get_rating }}</p>
+                            {% endif %}
+                    </div>
+                    <div class="col-md-3" style="text-align: right; font-size: 18px">
+                        <p><i>{{ rup.date_creation }}</i></p>
+                    </div>
+                </div>
+                <a class="btn btn-success" href="{% url "website:update_status" rup.id "accept" %}">Принять &nbsp<i
+                        class="fa fa-check"></i></a>
+                <a class="btn btn-danger" href="{% url "website:update_status" rup.id "reject" %}">Отклонить &nbsp<i
+                        class="fa fa-close"></i></a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>На данный момент заявок нет</p>
+    {% endif %}
+    <br><br>
+{% endblock %}

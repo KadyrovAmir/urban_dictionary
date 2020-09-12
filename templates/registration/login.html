@@ -13,7 +13,7 @@
                             {% csrf_token %}
                             <div style="color: red">
                                 {% if form.errors %}
-                                    <p>Несуществующий логин или пароль</p>
+                                    <p>Неправильный логин или пароль</p>
                                 {% endif %}
 
                                 {% if next %}
@@ -26,7 +26,8 @@
                             </div>
                             <div class="form-label-group">
                                 {{ form.username.label_tag }}
-                                <input class="form-control" type="text" name="username" autofocus required id="id_username"/>
+                                <input class="form-control" type="text" name="username" autofocus required
+                                       id="id_username"/>
                             </div>
 
                             <div class="form-label-group" style="margin-top: 15px">
