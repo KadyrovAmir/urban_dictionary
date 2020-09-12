@@ -166,8 +166,8 @@ def create_definition(request):
             term = Term(name=request.POST["name"])
             term.save()
         word_definition = Definition(term=term, description=request.POST["description"],
-                                source=request.POST["source"],
-                                author=current_user)
+                                     source=request.POST["source"],
+                                     author=current_user)
         word_definition.save()
         if current_user.is_moderator() or current_user.is_admin():
             word_definition.date = datetime.now()
@@ -410,14 +410,16 @@ def favourites(request):
     favs = Favorites.objects.filter(user=request.user.custom_user)
     result = [fav.definition for fav in favs]
     return render(request, 'website/main_page.html',
-                  # {'definitions': Definition.get_top_for_week})
                   {'definitions': result, 'favorites_page': True})
 
 
 def random_definition(request):
     definitions = [d for d in Definition.objects.all() if d.is_publish()]
-    word_definition = random.choice(definitions)
-    return redirect("website:definition", word_definition.id)
+    if definitions:
+        word_definition = random.choice(definitions)
+        return redirect("website:definition", word_definition.id)
+    else:
+        return redirect("website:main_page")
 
 
 def search(request):
@@ -511,7 +513,8 @@ def block(request, pk):
             email_text = support_mail.read() \
                 .replace("user_a93a04d13d4efbf11caf76339de7b435", blocked_user.username) \
                 .replace("reason_bfffaf3d25520b20dabb1dd7ab2f615f", blocking.reason) \
-                .replace("date_494deb546d18a9e9dd16f28ea9e41bfd", blocking.expiration_date.strftime("%d/%m/%Y, %H:%M:%S"))
+                .replace("date_494deb546d18a9e9dd16f28ea9e41bfd",
+                         blocking.expiration_date.strftime("%d/%m/%Y, %H:%M:%S"))
             send_mail('Блокировка на платформе {}'.format(request.META['HTTP_HOST']),
                       email_text,
                       EMAIL_HOST_USER,
