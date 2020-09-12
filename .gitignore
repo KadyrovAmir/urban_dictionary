@@ -58,7 +58,6 @@ docs/_build/
 target/
 
 .idea
-.env
 .venv
 db.sqlite3
 media/
