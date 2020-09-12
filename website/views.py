@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 import random
 import time
 import os.path
@@ -10,14 +9,12 @@ from django.core.files.storage import FileSystemStorage
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render, redirect, get_object_or_404, render_to_response
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django_registration.forms import User
 from django.core.mail import send_mail
 from django.views import View
-from django.template import RequestContext
 
-from website.enums import STATUSES_FOR_REQUESTS, ACTION_TYPES, USER, DEF, RFP, RUPS, SUP, AMOUNT_NOTIF_DISPLAY
 from urban_dictionary.settings import EMAIL_HOST_USER
 from website.tasks import unblock_user
 
@@ -27,8 +24,7 @@ except ImportError:
     import json
 
 from website.forms import *
-from website.models import Definition, CustomUser, Example, UploadData, Rating, RequestForPublication, Favorites, \
-    Notification, RequestUpdateStatus, Blocking, Term, STATUSES, ROLE_CHOICES
+from website.models import *
 
 
 def main_page(request):
@@ -54,7 +50,7 @@ def activate_user(request):
 
 def ask_support(request):
     if not request.user.is_anonymous:
-        if request.user.custom_user.is_admin():
+        if request.user.is_superuser:
             if request.method == 'POST':
                 return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
             return render(request, 'website/support_list.html',
@@ -75,7 +71,7 @@ def ask_support(request):
 
 @login_required
 def answer_support(request, pk):
-    if request.user.custom_user.is_admin():
+    if request.user.is_superuser:
         question = get_object_or_404(Support, pk=pk)
         if request.method == 'POST':
             question.answer = request.POST['answer']
@@ -92,7 +88,7 @@ def answer_support(request, pk):
                           EMAIL_HOST_USER,
                           [question.email],
                           fail_silently=False)
-            if not question.user is None:
+            if question.user is not None:
                 Notification(date_creation=datetime.now(), user=question.user,
                              action_type=ACTION_TYPES[11][0],
                              models_id="%s%s" % (SUP, question.id)).save()
@@ -169,16 +165,16 @@ def create_definition(request):
         if term is None:
             term = Term(name=request.POST["name"])
             term.save()
-        definition = Definition(term=term, description=request.POST["description"],
+        word_definition = Definition(term=term, description=request.POST["description"],
                                 source=request.POST["source"],
                                 author=current_user)
-        definition.save()
+        word_definition.save()
         if current_user.is_moderator() or current_user.is_admin():
-            definition.date = datetime.now()
-            definition.save()
+            word_definition.date = datetime.now()
+            word_definition.save()
         else:
             cur_date = datetime.now()
-            rfp = RequestForPublication(definition=definition, date_creation=cur_date)
+            rfp = RequestForPublication(definition=word_definition, date_creation=cur_date)
             rfp.save()
             for admin in CustomUser.objects.filter(role=3):
                 Notification(date_creation=cur_date, user=admin, action_type=ACTION_TYPES[12][0],
@@ -187,54 +183,54 @@ def create_definition(request):
         examples = request.POST.getlist("examples")
         primary = int(request.POST.get("primary"))
         for i, ex in enumerate(examples):
-            example = Example(example=ex, primary=True if primary == i else False, definition=definition)
+            example = Example(example=ex, primary=True if primary == i else False, definition=word_definition)
             example.save()
         for f, h in zip(request.FILES.getlist("upload_data"), request.POST.getlist("header")):
             link_file = "%s/%s/%s.%s" % (
-                definition.author.id, definition.id, int(time.time() * 1000), f.name.split(".")[1])
+                word_definition.author.id, word_definition.id, int(time.time() * 1000), f.name.split(".")[1])
             fs = FileSystemStorage()
             filename = fs.save(link_file, f)
-            u = UploadData(header_for_file=h, definition=definition, image=filename)
+            u = UploadData(header_for_file=h, definition=word_definition, image=filename)
             u.save()
-        return redirect("website:definition", definition.id)
+        return redirect("website:definition", word_definition.id)
     return render(request, "website/definition/create_definition.html", {})
 
 
 @login_required
 def edit_definition(request, pk):
-    definition = Definition.objects.get(id=pk)
+    word_definition = Definition.objects.get(id=pk)
     current_user = request.user.custom_user
-    if definition.author != current_user:
+    if word_definition.author != current_user:
         raise Http404()
-    rfp = RequestForPublication.objects.get(definition=definition)
+    rfp = RequestForPublication.objects.get(definition=word_definition)
     if request.method == "POST":
 
         term = Term.objects.filter(name=request.POST["name"]).first()
         if term is None:
             term = Term(name=request.POST["name"])
             term.save()
-        definition.term = term
-        definition.description = request.POST["description"]
-        definition.source = request.POST["source"]
-        definition.date = None
-        definition.save()
-        if current_user.is_moderator() or current_user.is_admin():
-            definition.date = datetime.now()
-            definition.save()
+        word_definition.term = term
+        word_definition.description = request.POST["description"]
+        word_definition.source = request.POST["source"]
+        word_definition.date = None
+        word_definition.save()
+        if request.user.is_staff:
+            word_definition.date = datetime.now()
+            word_definition.save()
         else:
             rfp.date_creation = datetime.now()
             rfp.status = STATUSES_FOR_REQUESTS[0][0]
             rfp.save()
 
-        old_examples = list(definition.examples.all())
+        old_examples = list(word_definition.examples.all())
         examples = request.POST.getlist("examples")
         primary = int(request.POST.get("primary"))
         for i, ex in enumerate(examples):
-            cur_examples = Example.objects.filter(example=ex, definition=definition)
+            cur_examples = Example.objects.filter(example=ex, definition=word_definition)
             if len(cur_examples) > 0:
                 example = cur_examples[0]
             else:
-                example = Example(example=ex, definition=definition)
+                example = Example(example=ex, definition=word_definition)
             if example in old_examples:
                 old_examples.remove(example)
             if primary == i:
@@ -249,13 +245,13 @@ def edit_definition(request, pk):
         print(request.POST)
         for f, h in zip(request.FILES.getlist("upload_data"), request.POST.getlist("header")):
             link_file = "%s/%s/%s.%s" % (
-                definition.author.id, definition.id, int(time.time() * 1000), f.name.split(".")[1])
+                word_definition.author.id, word_definition.id, int(time.time() * 1000), f.name.split(".")[1])
             fs = FileSystemStorage()
             filename = fs.save(link_file, f)
-            u = UploadData(header_for_file=h, definition=definition, image=filename)
+            u = UploadData(header_for_file=h, definition=word_definition, image=filename)
             u.save()
         return redirect("website:personal_definitions")
-    return render(request, "website/definition/edit_definition.html", {"definition": definition, "rfp": rfp})
+    return render(request, "website/definition/edit_definition.html", {"definition": word_definition, "rfp": rfp})
 
 
 @login_required
@@ -292,8 +288,8 @@ def request_for_definition(request, pk):
 
 def definition(request, pk):
     try:
-        definition = Definition.objects.get(id=pk)
-        return render(request, "website/definition/definition.html", {"definition": definition})
+        word_definition = Definition.objects.get(id=pk)
+        return render(request, "website/definition/definition.html", {"definition": word_definition})
     except:
         raise Http404()
 
@@ -473,13 +469,13 @@ def create_request_for_update_status(request):
 
 @login_required
 def update_status(request, pk, answer):
-    if request.user.custom_user.is_admin():
+    if request.user.is_superuser:
         rup = RequestUpdateStatus.objects.get(pk=pk)
         if answer == "accept":
             rup.status = 3
             rup.save()
             user = rup.user
-            user.role = 2
+            user.role = Role.moderator.value
             user.save()
         else:
             rup.status = 2
@@ -492,7 +488,7 @@ def update_status(request, pk, answer):
 
 @login_required
 def requests_for_update_status(request):
-    if request.user.custom_user.is_admin():
+    if request.user.is_superuser:
         return render(request, "website/admin/requests_for_update_status.html",
                       {"rups": RequestUpdateStatus.objects.filter(status=1)})
     raise Http404()
@@ -501,7 +497,7 @@ def requests_for_update_status(request):
 @login_required
 @transaction.atomic
 def block(request, pk):
-    if request.user.custom_user.is_admin():
+    if request.user.is_superuser:
         blocked_user = User.objects.get(pk=pk)
         blocking = Blocking(user=blocked_user.custom_user, reason=request.POST["reason"], date_creation=datetime.now(),
                             expiration_date=request.POST["date"])
@@ -515,7 +511,7 @@ def block(request, pk):
             email_text = support_mail.read() \
                 .replace("user_a93a04d13d4efbf11caf76339de7b435", blocked_user.username) \
                 .replace("reason_bfffaf3d25520b20dabb1dd7ab2f615f", blocking.reason) \
-                .replace("date_494deb546d18a9e9dd16f28ea9e41bfd", blocking.expiration_date)
+                .replace("date_494deb546d18a9e9dd16f28ea9e41bfd", blocking.expiration_date.strftime("%d/%m/%Y, %H:%M:%S"))
             send_mail('Блокировка на платформе {}'.format(request.META['HTTP_HOST']),
                       email_text,
                       EMAIL_HOST_USER,
@@ -530,7 +526,7 @@ def block(request, pk):
 @login_required
 @transaction.atomic
 def unblock(request, pk):
-    if request.user.custom_user.is_admin():
+    if request.user.is_superuser:
         unblocked_user = User.objects.get(pk=pk)
         blocking = unblocked_user.custom_user.blocking.all().filter(active=True)[0]
         blocking.active = False
@@ -554,7 +550,6 @@ def unblock(request, pk):
 
 @login_required
 def drop_file(request):
-    print("check")
     file = UploadData.objects.get(pk=request.POST.get('file_id', None))
     if file.definition.author == request.user.custom_user:
         file.delete()

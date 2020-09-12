@@ -23,12 +23,6 @@ class CustomUser(models.Model):
     def __str__(self):
         return self.user.username
 
-    def is_moderator(self):
-        return self.role == ROLE_CHOICES[1][0]
-
-    def is_admin(self):
-        return self.role == ROLE_CHOICES[2][0]
-
     def get_new_notification(self):
         return len(self.notifications.filter(new=True))
 

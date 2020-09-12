@@ -67,7 +67,7 @@
                                 ({{ user.custom_user.get_new_notification }})
                             {% endif %}</a>
                     </li>
-                    {% if user.custom_user.is_admin %}
+                    {% if user.is_superuser %}
                         <li class="nav-item horizontal">
                             <a class="nav-link" href="{% url "website:requests_pub" %}">Запросы на
                                 публикацию</a>

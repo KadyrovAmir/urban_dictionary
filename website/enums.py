@@ -1,3 +1,5 @@
+from enum import Enum
+
 # FOR UPDATE STATUS
 
 # DEF_AMOUNT = 50
@@ -16,18 +18,6 @@ USER = "USER"
 RFP = "RFP"
 RUPS = "RUPS"
 SUP = "SUP"
-
-ROLE_CHOICES = (
-    (1, 'Пользователь'),
-    (2, 'Модератор'),
-    (3, 'Администратор'),
-)
-STATUSES = (
-    (1, "Активный"),
-    (2, "Заблокированный"),
-    (3, "Неподтвержденная регистрация")
-)
-from enum import Enum
 
 
 class Role(Enum):
@@ -70,6 +60,7 @@ class Status(Enum):
         if self.value == Status.blocked:
             return 'Заблокированный'
         return 'Неподтвержденная регистрация'
+
 
 STATUSES_FOR_REQUESTS = (
     (1, "Новый"),
