@@ -12,7 +12,7 @@ from website.enums import *
 
 class CustomUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="custom_user")
-    description = models.TextField(verbose_name="О себе")
+    description = models.TextField(blank=True, verbose_name="О себе")
     status = models.IntegerField(choices=Status.choices(), blank=False, null=False, default=Status.not_activated.value,
                                  verbose_name="Статус")
     photo = models.ImageField(upload_to='profile_pics', default='profile_pics/default.jpg')

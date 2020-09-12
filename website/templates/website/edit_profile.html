@@ -57,7 +57,7 @@
                                         <div class="col">
                                             <div class="form-group">
                                                 <label>Имя</label>
-                                                <input class="form-control" type="text"
+                                                <input required class="form-control" type="text"
                                                        name="{{ user_form.first_name.name }}"
                                                        id="{{ user_form.first_name.id_for_label }}"
                                                        value="{{ user_form.first_name.value }}">
@@ -66,7 +66,7 @@
                                         <div class="col">
                                             <div class="form-group">
                                                 <label>Фамилия</label>
-                                                <input class="form-control" type="text"
+                                                <input required class="form-control" type="text"
                                                        name="{{ user_form.last_name.name }}"
                                                        id="{{ user_form.last_name.id_for_label }}"
                                                        value="{{ user_form.last_name.value }}">
