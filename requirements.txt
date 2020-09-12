@@ -3,6 +3,8 @@ chardet==3.0.4
 confusable-homoglyphs==3.2.0
 decorator==4.4.1
 Django==2.1.7
+django-background-tasks==1.2.5
+django-compat==1.0.15
 django-environ==0.4.5
 django-registration==3.0.1
 django-widget-tweaks==1.4.3
