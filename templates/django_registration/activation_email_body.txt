@@ -2,4 +2,4 @@
 
 
 Для активации вашего аккаунта перейдите по ссылке:
-{{ site }}/accounts/activate/{{ activation_key }}/
+{{ scheme }}://urban-dictionary-rus.herokuapp.com/accounts/activate/{{ activation_key }}/
