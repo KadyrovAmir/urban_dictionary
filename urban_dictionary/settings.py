@@ -158,7 +158,7 @@ EMAIL_HOST_USER = 'apikey'
 EMAIL_HOST_PASSWORD = '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'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'Современный Словарь'
+DEFAULT_FROM_EMAIL = 'Urban Dictionary Rus'
 SITE_ID = 1
 
 django_heroku.settings(locals())
