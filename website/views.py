@@ -16,15 +16,16 @@ from django.core.mail import send_mail
 from django.views import View
 
 from urban_dictionary.settings import EMAIL_HOST_USER
-from website.tasks import unblock_user
 
 try:
     from django.utils import simplejson as json
 except ImportError:
     import json
 
+from website.tasks import unblock_user
 from website.forms import *
 from website.models import *
+from website.helper import like_and_dislike
 
 
 def main_page(request):
@@ -145,7 +146,7 @@ class UserDetailView(View):
         if profile.custom_user.is_block():
             if request.user.is_anonymous:
                 raise Http404()
-            if not request.user.custom_user.is_admin():
+            if not request.user.is_superuser:
                 raise Http404()
         user_definitions = Definition.objects.filter(author_id__exact=pk)
         user_rating = str(sum(map(lambda x: x.get_likes() - x.get_dislikes(), user_definitions)))
@@ -169,7 +170,7 @@ def create_definition(request):
                                      source=request.POST["source"],
                                      author=current_user)
         word_definition.save()
-        if current_user.is_moderator() or current_user.is_admin():
+        if request.user.is_staff:
             word_definition.date = datetime.now()
             word_definition.save()
         else:
@@ -219,7 +220,7 @@ def edit_definition(request, pk):
             word_definition.save()
         else:
             rfp.date_creation = datetime.now()
-            rfp.status = STATUSES_FOR_REQUESTS[0][0]
+            rfp.status = RequestStatus.new.value
             rfp.save()
 
         old_examples = list(word_definition.examples.all())
@@ -262,7 +263,7 @@ def request_for_definition(request, pk):
     if request.method == 'POST':
         answer = request.POST["answer"]
         if answer == "approve":
-            rfp.status = STATUSES_FOR_REQUESTS[2][0]
+            rfp.status = RequestStatus.published.value
             rfp.definition.date = datetime.now()
             rfp.definition.save()
             Notification(date_creation=datetime.now(), user=rfp.definition.author,
@@ -270,12 +271,12 @@ def request_for_definition(request, pk):
                          models_id="%s%s" % (DEF, rfp.definition.id)).save()
         else:
             if answer == "reject":
-                rfp.status = STATUSES_FOR_REQUESTS[1][0]
+                rfp.status = RequestStatus.rejected.value
                 Notification(date_creation=datetime.now(), user=rfp.definition.author,
                              action_type=ACTION_TYPES[4][0],
                              models_id="%s%s" % (DEF, rfp.definition.id)).save()
             else:
-                rfp.status = STATUSES_FOR_REQUESTS[3][0]
+                rfp.status = RequestStatus.rejected_forever.value
                 Notification(date_creation=datetime.now(), user=rfp.definition.author,
                              action_type=ACTION_TYPES[5][0],
                              models_id="%s%s" % (DEF, rfp.definition.id)).save()
@@ -323,65 +324,15 @@ class TermView(View):
 @require_POST
 @login_required
 def like(request):
-    if request.method == 'POST':
-        user = request.user.custom_user
-        definition_id = request.POST.get('def_id', None)
-        defin = get_object_or_404(Definition, pk=definition_id)
-
-        if defin.estimates.filter(user=user, estimate=1).exists():
-            # user has already liked this definition
-            # remove like/user
-            defin.estimates.get(user=user).delete()
-            flag = False
-        elif defin.estimates.filter(user=user, estimate=0).exists():
-            defin.estimates.get(user=user).delete()
-            Rating(definition=defin, user=user, estimate=1).save()
-            if defin.author.id != user.id:
-                Notification(date_creation=datetime.now(), action_type=ACTION_TYPES[1][0], user=defin.author,
-                             models_id="%s%s %s%s" % (USER, user.id, DEF, defin.id)).save()
-            flag = True
-        else:
-            # add a new like for a company
-            Rating(definition=defin, user=user, estimate=1).save()
-            if defin.author.id != user.id:
-                Notification(date_creation=datetime.now(), action_type=ACTION_TYPES[1][0], user=defin.author,
-                             models_id="%s%s %s%s" % (USER, user.id, DEF, defin.id)).save()
-            flag = True
-
-        ctx = {'likes_count': defin.get_likes(), 'dislikes_count': defin.get_dislikes(), 'is_liked': flag}
-        # use mimetype instead of content_type if django < 5
-        return HttpResponse(json.dumps(ctx), content_type='application/json')
+    # use mimetype instead of content_type if django < 5
+    return HttpResponse(json.dumps(like_and_dislike(request, True)), content_type='application/json')
 
 
+@require_POST
 @login_required
 def dislike(request):
-    if request.method == 'POST':
-        user = request.user.custom_user
-        definition_id = request.POST.get('def_id', None)
-        defin = get_object_or_404(Definition, pk=definition_id)
-
-        if defin.estimates.filter(user=user, estimate=0).exists():
-            # user has already liked this definition
-            # remove like/user
-            defin.estimates.get(user=user).delete()
-            flag = False
-        elif defin.estimates.filter(user=user, estimate=1).exists():
-            defin.estimates.get(user=user).delete()
-            if defin.author.id != user.id:
-                Notification(date_creation=datetime.now(), user=defin.author,
-                             models_id="%s%s %s%s" % (USER, user.id, DEF, defin.id)).save()
-            Rating(definition=defin, user=user, estimate=0).save()
-            flag = True
-        else:
-            # add a new like for a company
-            Rating(definition=defin, user=user, estimate=0).save()
-            if defin.author.id != user.id:
-                Notification(date_creation=datetime.now(), user=defin.author,
-                             models_id="%s%s %s%s" % (USER, user.id, DEF, defin.id)).save()
-            flag = True
-        ctx = {'dislikes_count': defin.get_dislikes(), 'likes_count': defin.get_likes(), 'is_disliked': flag}
-        # use mimetype instead of content_type if django < 5
-        return HttpResponse(json.dumps(ctx), content_type='application/json')
+    # use mimetype instead of content_type if django < 5
+    return HttpResponse(json.dumps(like_and_dislike(request, False)), content_type='application/json')
 
 
 @login_required
@@ -419,7 +370,7 @@ def random_definition(request):
         word_definition = random.choice(definitions)
         return redirect("website:definition", word_definition.id)
     else:
-        return redirect("website:main_page")
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def search(request):
@@ -441,7 +392,7 @@ def requests_pub(request):
     if user.is_superuser:
         return render(request, 'website/admin/requests_for_publication.html',
                       {'rfps': RequestForPublication.objects.order_by(
-                          "-date_creation").filter(status=STATUSES_FOR_REQUESTS[0][0])})
+                          "-date_creation").filter(status=RequestStatus.new.value)})
     raise Http404()
 
 

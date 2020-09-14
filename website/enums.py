@@ -62,27 +62,49 @@ class Status(Enum):
         return 'Неподтвержденная регистрация'
 
 
-STATUSES_FOR_REQUESTS = (
-    (1, "Новый"),
-    (2, "Отклонен"),
-    (3, "Опубликован"),
-    (4, "Навсегда отклонен")
-)
+class RequestStatus(Enum):
+    new = 1
+    rejected = 2
+    published = 3
+    rejected_forever = 4
 
-RATING_VALUES = (
-    (0, "Dislike"),
-    (1, "Like"),
-)
+    @classmethod
+    def choices(cls):
+        return tuple((i.name, i.value) for i in cls)
+
+    def __str__(self):
+        if self is RequestStatus.rejected:
+            return 'Отклонен'
+        if self is RequestStatus.rejected_forever:
+            return 'Навсегда отклонен'
+        if self is RequestStatus.published:
+            return 'Опубликован'
+        return 'Новый'
+
+
+class DefinitionRating(Enum):
+    dislike = 1
+    like = 2
+
+    @classmethod
+    def choices(cls):
+        return tuple((i.name, i.value) for i in cls)
+
+    def __str__(self):
+        if self is DefinitionRating.like:
+            return 'Like'
+        return 'Dislike'
+
 
 ACTION_TYPES = (
     (0, "Dislike"),  # user_id def_id [DONE]
     (1, "Like"),  # user_id def_id [DONE]
-    (2, "Notify update status"),  # NOT IMPLEMENT
+    (2, "Notify update status"),  # NOT IMPLEMENT TODO Implement
     (3, "Status has updated"),  # rups_id [DONE]
     (4, "Def was checked by admin"),  # def_id [DONE]
     (5, "Def was rejected by admin"),  # def_id [DONE]
     (6, "Def was published"),  # def_id [DONE]
-    (7, "Block"),  # NOT IMPLEMENT, SEND EMAIL [DONE]
+    (7, "Block"),  # NOT IMPLEMENT, SEND EMAIL [DONE] TODO Implement notification
     (8, "Unblock by admin"),  # NOT IMPLEMENT, SEND EMAIL [DONE]
     (9, "Unblock (time)"),  # NOT IMPLEMENT, SEND EMAIL [DONE]
     (10, "Def was added in favorites by smb"),  # user_id  def_id [DONE]

@@ -151,8 +151,8 @@ class UploadData(models.Model):
 class RequestForPublication(models.Model):
     definition = models.ForeignKey(Definition, related_name='requests', on_delete=models.CASCADE,
                                    blank=False, null=False, verbose_name='Ссылка на определение')
-    status = models.IntegerField(choices=STATUSES_FOR_REQUESTS, blank=False, null=False,
-                                 default=STATUSES_FOR_REQUESTS[0][0],
+    status = models.IntegerField(choices=RequestStatus.choices(), blank=False, null=False,
+                                 default=RequestStatus.new.value,
                                  verbose_name="Статус публикации")
     reason = models.TextField(verbose_name="Причина отклонения", blank=False, null=False)
 
@@ -165,7 +165,7 @@ class RequestForPublication(models.Model):
         return "Запрос на публикацию определения %s" % self.definition
 
     def is_new(self):
-        return self.status == STATUSES_FOR_REQUESTS[0][0]
+        return self.status == RequestStatus.new.value
 
 
 class Comment(models.Model):
@@ -190,8 +190,8 @@ class Rating(models.Model):
                                    blank=False, null=False, verbose_name='Ссылка на определение')
     user = models.ForeignKey(CustomUser, related_name='estimates', on_delete=models.CASCADE,
                              blank=False, null=False, verbose_name='Пользователь')
-    estimate = models.IntegerField(choices=RATING_VALUES, blank=False, null=False,
-                                   default=RATING_VALUES[0][0],
+    estimate = models.IntegerField(choices=DefinitionRating.choices(), blank=False, null=False,
+                                   default=DefinitionRating.like.value,
                                    verbose_name="Оценка")
 
     def __str__(self):
@@ -261,8 +261,8 @@ class Notification(models.Model):
 
 
 class RequestUpdateStatus(models.Model):
-    status = models.IntegerField(choices=STATUSES_FOR_REQUESTS, blank=False, null=False,
-                                 default=STATUSES_FOR_REQUESTS[0][0],
+    status = models.IntegerField(choices=RequestStatus.choices(), blank=False, null=False,
+                                 default=RequestStatus.new.value,
                                  verbose_name="Статус обновления уровня профиля")
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="update_status")
     date_creation = models.DateTimeField(blank=False, null=False, verbose_name="Дата создания запроса")
