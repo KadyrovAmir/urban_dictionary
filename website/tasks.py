@@ -4,7 +4,6 @@ from background_task import background
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.utils import timezone
-from django.utils.timezone import now
 from django_registration.forms import User
 
 from urban_dictionary.settings import EMAIL_HOST_USER
@@ -24,7 +23,7 @@ def unblock_user(user_id):
             unblocked_user.save()
 
             BASE = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(BASE, "unblock_mail.txt"), 'r', encoding="utf-8") as support_mail:
+            with open(os.path.join(BASE, "mail_texts/unblock_mail.txt"), 'r', encoding="utf-8") as support_mail:
                 email_text = support_mail.read() \
                     .replace("user_a93a04d13d4efbf11caf76339de7b435", unblocked_user.username)
                 send_mail('Разблокировка на платформе {}'.format(Site.objects.get_current().domain),

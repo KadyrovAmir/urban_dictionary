@@ -53,7 +53,7 @@ def ask_support(request):
         if request.user.is_superuser:
             if request.method == 'POST':
                 return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-            return render(request, 'website/support_list.html',
+            return render(request, 'website/support/support_list.html',
                           {'questions': Support.objects.filter(answer__isnull=True).order_by("-date_creation")})
     if request.method == 'POST':
         question = Support(question=request.POST["question"], name=request.POST["name"], email=request.POST["email"],
@@ -65,8 +65,8 @@ def ask_support(request):
             Notification(date_creation=datetime.now(), user=admin,
                          action_type=ACTION_TYPES[14][0],
                          models_id="%s%s" % (SUP, question.id)).save()
-        return render(request, 'website/support_done.html', {'email': question.email})
-    return render(request, 'website/support.html', {})
+        return render(request, 'website/support/support_done.html', {'email': question.email})
+    return render(request, 'website/support/support.html', {})
 
 
 @login_required
@@ -78,7 +78,7 @@ def answer_support(request, pk):
             question.save()
 
             BASE = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(BASE, "support_mail.txt"), 'r', encoding="utf-8") as support_mail:
+            with open(os.path.join(BASE, "mail_texts/support_mail.txt"), 'r', encoding="utf-8") as support_mail:
                 email_text = support_mail.read() \
                     .replace("question_Q8Vx q]vYfs$*7c,<tyfP|SCdr+wl+m2N{.uY.[a9&mR1zmHL}8[Xz V&36X||0t",
                              question.question) \
@@ -93,7 +93,7 @@ def answer_support(request, pk):
                              action_type=ACTION_TYPES[11][0],
                              models_id="%s%s" % (SUP, question.id)).save()
             return redirect('website:support')
-        return render(request, 'website/support_answer.html', {
+        return render(request, 'website/support/support_answer.html', {
             'question': question
         })
     else:
@@ -509,7 +509,7 @@ def block(request, pk):
         update_session_auth_hash(request, blocked_user)
 
         BASE = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(BASE, "block_mail.txt"), 'r', encoding="utf-8") as support_mail:
+        with open(os.path.join(BASE, "mail_texts/block_mail.txt"), 'r', encoding="utf-8") as support_mail:
             email_text = support_mail.read() \
                 .replace("user_a93a04d13d4efbf11caf76339de7b435", blocked_user.username) \
                 .replace("reason_bfffaf3d25520b20dabb1dd7ab2f615f", blocking.reason) \
@@ -538,7 +538,7 @@ def unblock(request, pk):
         unblocked_user.save()
 
         BASE = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(BASE, "unblock_mail.txt"), 'r', encoding="utf-8") as support_mail:
+        with open(os.path.join(BASE, "mail_texts/unblock_mail.txt"), 'r', encoding="utf-8") as support_mail:
             email_text = support_mail.read() \
                 .replace("user_a93a04d13d4efbf11caf76339de7b435", unblocked_user.username)
             send_mail('Разблокировка на платформе {}'.format(request.META['HTTP_HOST']),
