@@ -150,12 +150,12 @@
                                 $('#dislike{{ definition.pk }}').html("<i class=\"fa fa-thumbs-down\">&nbsp" + response.dislikes_count + "</i>");
                                 $("#like{{ definition.pk }}").removeClass();
                                 $("#dislike{{ definition.pk }}").removeClass();
-                                if (response.is_disliked) {
-                                    $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
-                                    $("#dislike{{ definition.pk }}").addClass("btn btn-danger");
-                                } else {
+                                if (response.is_liked) {
                                     $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
                                     $("#dislike{{ definition.pk }}").addClass("btn btn-outline-danger");
+                                } else {
+                                    $("#like{{ definition.pk }}").addClass("btn btn-outline-success");
+                                    $("#dislike{{ definition.pk }}").addClass("btn btn-danger");
                                 }
                             },
                             error: function (rs, e) {
